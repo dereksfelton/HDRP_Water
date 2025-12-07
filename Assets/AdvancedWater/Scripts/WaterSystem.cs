@@ -116,6 +116,16 @@ namespace AdvancedWater
             Cleanup();
         }
 
+        private void OnValidate()
+        {
+            // Called when values change in Inspector (Edit mode)
+            // Apply profile settings when profile is changed
+            if (profile != null)
+            {
+                profile.ApplyToWaterSystem(this);
+            }
+        }
+
         private void Initialize()
         {
             waterRenderer = GetComponent<MeshRenderer>();
@@ -126,6 +136,12 @@ namespace AdvancedWater
             InitializeWaveSimulator();
             InitializeInteractionManager();
             InitializeUnderwaterRenderer();
+
+            // Apply profile settings if available
+            if (profile != null)
+            {
+                profile.ApplyToWaterSystem(this);
+            }
 
             // Apply initial settings
             UpdateMaterialProperties();
