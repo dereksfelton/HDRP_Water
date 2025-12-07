@@ -1,146 +1,136 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace AdvancedWater
+namespace AdvancedWater.Editor
 {
     /// <summary>
-    /// Custom Inspector editor for WaterProfile with Create Variant button
-    /// Place this file in an "Editor" folder: Assets/AdvancedWater/Editor/
+    /// Custom inspector for WaterProfile ScriptableObject
+    /// Provides validation, warnings, and profile management tools
     /// </summary>
     [CustomEditor(typeof(WaterProfile))]
-    public class WaterProfileEditor : Editor
+    public class WaterProfileEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
             // Draw default inspector
             DrawDefaultInspector();
-
-            // Add some space
+            
             EditorGUILayout.Space(10);
-
-            // Draw a separator line
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            EditorGUILayout.Space(5);
-
+            
+            // Validation section
+            DrawValidationSection();
+            
+            EditorGUILayout.Space(10);
+            
+            // Profile tools
+            DrawProfileTools();
+        }
+        
+        private void DrawValidationSection()
+        {
             WaterProfile profile = (WaterProfile)target;
-
-            // Create Variant button
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
             
-            if (GUILayout.Button("Create Variant", GUILayout.Width(150), GUILayout.Height(30)))
+            EditorGUILayout.LabelField("Profile Validation", EditorStyles.boldLabel);
+            
+            string[] warnings = profile.Validate();
+            
+            if (warnings.Length == 0)
             {
-                CreateVariant(profile);
+                EditorGUILayout.HelpBox("✓ Profile is valid with no warnings", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    "Profile has warnings:\n\n" + string.Join("\n", warnings),
+                    MessageType.Warning
+                );
+            }
+        }
+        
+        private void DrawProfileTools()
+        {
+            EditorGUILayout.LabelField("Profile Tools", EditorStyles.boldLabel);
+            
+            EditorGUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("Create Variant", GUILayout.Height(30)))
+            {
+                CreateProfileVariant();
             }
             
-            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Reset to Defaults", GUILayout.Height(30)))
+            {
+                if (EditorUtility.DisplayDialog(
+                    "Reset Profile",
+                    "Reset this profile to default values? This cannot be undone.",
+                    "Reset",
+                    "Cancel"))
+                {
+                    ResetToDefaults();
+                }
+            }
+            
             EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space(5);
-            EditorGUILayout.HelpBox(
-                "Click 'Create Variant' to create a copy of this profile that you can customize independently.",
-                MessageType.Info
+        }
+        
+        private void CreateProfileVariant()
+        {
+            WaterProfile sourceProfile = (WaterProfile)target;
+            WaterProfile variant = Object.Instantiate(sourceProfile);
+            variant.profileName = sourceProfile.profileName + " Variant";
+            
+            string path = EditorUtility.SaveFilePanelInProject(
+                "Save Profile Variant",
+                variant.profileName,
+                "asset",
+                "Save the new profile variant"
             );
+            
+            if (!string.IsNullOrEmpty(path))
+            {
+                AssetDatabase.CreateAsset(variant, path);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                
+                EditorUtility.FocusProjectWindow();
+                Selection.activeObject = variant;
+            }
         }
-
-        private void CreateVariant(WaterProfile sourceProfile)
+        
+        private void ResetToDefaults()
         {
-            // Prompt for variant name
-            string defaultName = sourceProfile.profileName + " Variant";
-            string variantName = EditorInputDialog.Show("Create Water Profile Variant", 
-                "Enter name for the new variant:", defaultName);
-
-            if (string.IsNullOrEmpty(variantName))
-                return; // User cancelled
-
-            // Create the variant
-            WaterProfile variant = Instantiate(sourceProfile);
-            variant.profileName = variantName;
-
-            // Save to same folder as source
-            string sourcePath = AssetDatabase.GetAssetPath(sourceProfile);
-            string sourceFolder = System.IO.Path.GetDirectoryName(sourcePath);
-            string variantFileName = variantName.Replace(" ", "_") + ".asset";
-            string variantPath = System.IO.Path.Combine(sourceFolder, variantFileName);
-
-            // Ensure unique filename
-            variantPath = AssetDatabase.GenerateUniqueAssetPath(variantPath);
-
-            // Create asset
-            AssetDatabase.CreateAsset(variant, variantPath);
+            WaterProfile profile = (WaterProfile)target;
+            
+            // Stage 1: Reset to defaults
+            profile.shallowColor = new Color(0.325f, 0.807f, 0.971f, 0.725f);
+            profile.deepColor = new Color(0.086f, 0.407f, 1.0f, 0.749f);
+            profile.depthMaxDistance = 10f;
+            profile.smoothness = 0.95f;
+            profile.metallic = 0.0f;
+            profile.normalScale = 1.0f;
+            profile.absorptionColor = new Color(0.45f, 0.029f, 0.018f, 1.0f);
+            profile.scatteringColor = new Color(0.0f, 0.46f, 0.54f, 1.0f);
+            profile.scatteringPower = 3.0f;
+            profile.fresnelPower = 5.0f;
+            profile.refractionStrength = 0.1f;
+            
+            // Stage 0: Reset to defaults
+            profile.meshSettings = new WaterMeshSettings
+            {
+                gridResolution = 100,
+                gridSize = 100f,
+                generateAtRuntime = true
+            };
+            
+            profile.performanceSettings = new PerformanceSettings
+            {
+                lodLevels = 3,
+                lodDistance = 50f,
+                enableInstancing = true
+            };
+            
+            EditorUtility.SetDirty(profile);
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-
-            // Select and ping the new variant
-            EditorGUIUtility.PingObject(variant);
-            Selection.activeObject = variant;
-
-            Debug.Log($"Created water profile variant: {variantName} at {variantPath}");
-        }
-    }
-
-    /// <summary>
-    /// Simple input dialog utility
-    /// </summary>
-    public class EditorInputDialog : EditorWindow
-    {
-        private string inputText = "";
-        private string description = "";
-        private System.Action<string> onComplete;
-
-        public static string Show(string title, string description, string defaultValue = "")
-        {
-            EditorInputDialog window = GetWindow<EditorInputDialog>(true, title, true);
-            window.description = description;
-            window.inputText = defaultValue;
-            window.minSize = new Vector2(400, 120);
-            window.maxSize = new Vector2(400, 120);
-            window.ShowModal();
-
-            return window.inputText;
-        }
-
-        private void OnGUI()
-        {
-            EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(description, EditorStyles.wordWrappedLabel);
-            EditorGUILayout.Space(10);
-
-            GUI.SetNextControlName("InputField");
-            inputText = EditorGUILayout.TextField("Name:", inputText);
-
-            EditorGUILayout.Space(10);
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("Cancel", GUILayout.Width(80)))
-            {
-                inputText = ""; // Clear to signal cancellation
-                Close();
-            }
-
-            if (GUILayout.Button("Create", GUILayout.Width(80)))
-            {
-                Close();
-            }
-
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space(5);
-
-            // Focus input field on first frame
-            if (Event.current.type == EventType.Layout)
-            {
-                EditorGUI.FocusTextInControl("InputField");
-            }
-
-            // Handle Enter key
-            if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Return)
-            {
-                Close();
-            }
         }
     }
 }
