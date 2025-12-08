@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6cfa53a814f0247acbd92c7435e224, type: 3}
+  m_Name: Lake_Calm
+  m_EditorClassIdentifier: Assembly-CSharp::AdvancedWater.WaterProfile
+  profileName: Lake_Calm
+  description: A water config for a calm lake
+  shallowColor: {r: 0.4, g: 0.6, b: 0.5, a: 0.7490196}
+  deepColor: {r: 0.1, g: 0.3, b: 0.2, a: 0.9019608}
+  depthMaxDistance: 8
+  smoothness: 0.85
+  metallic: 0
+  absorptionColor: {r: 0.45, g: 0.029, b: 0.018, a: 1}
+  scatteringColor: {r: 0, g: 0.46, b: 0.54, a: 1}
+  scatteringPower: 3
+  fresnelPower: 5
+  refractionStrength: 0.5
+  normalMap: {fileID: 0}
+  normalStrength: 1
+  normalTiling: {x: 1, y: 1}
+  normalScrollSpeed: 0.01
+  waveData:
+    layers:
+    - direction: {x: 1, y: 0}
+      amplitude: 0.15
+      wavelength: 8
+      steepness: 0.2
+      speed: 0
+      phase: 0
+    - direction: {x: 0.6, y: 0.8}
+      amplitude: 0.1
+      wavelength: 5
+      steepness: 0.15
+      speed: 0
+      phase: 2
+    enableRipples: 1
+    windDirection: {x: 0.9805807, y: 0.19611615}
+    windSpeed: 1.5
+    rippleScale: 1.5
+    rippleStrength: 0.05
+    rippleOctaves: 3
+    rippleNormalSampleOffset: 0.1
+  enableAnimation: 1
+  animationSpeed: 0.6
+  reflectionQuality: 1
+  underwaterVisibility: 20
+  underwaterTint: {r: 0.5, g: 0.7, b: 0.8, a: 1}
+  underwaterFogDistance: 50
+  interactionStrength: 1
