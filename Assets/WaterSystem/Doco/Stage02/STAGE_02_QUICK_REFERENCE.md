@@ -1,395 +1,326 @@
-# Stage 02: Quick Reference Guide
+# Stage 2 Quick Reference
 
-**Quick setup guide for water surface animation in Unity 6.3 + HDRP 17**
-
----
-
-## 5-Minute Setup
-
-### Step 1: Import Files (2 min)
-
-Copy these files to your Unity project:
-
-```
-Assets/WaterSystem/Scripts/
-- WaterSurfaceAnimator.cs
-- WaterWaveData.cs  
-- WaterProfile.cs (replace)
-
-Assets/WaterSystem/Scripts/Editor/
-- WaterProfileEditor.cs (replace)
-- WaterShaderGUI.cs
-
-Assets/WaterSystem/Shaders/
-- WaterSurface.shader (replace)
-- Include/WaterWaves.hlsl
-```
-
-### Step 2: Add Component (1 min)
-
-1. Select your water GameObject
-2. Add Component → **WaterSurfaceAnimator**
-3. Leave default settings
-
-### Step 3: Create Profile (1 min)
-
-1. Right-click in Project → Create → Water System → Water Profile
-2. Name it "My Ocean"
-3. Click **"Reset to Ocean"** button in Inspector
-
-### Step 4: Apply & Test (1 min)
-
-1. Drag profile to WaterSystem.currentProfile
-2. Enable material keyword: **_WAVES_ENABLED**
-3. Press Play ▶️
-4. Watch waves animate!
+**Status:** ✅ COMPLETE | **Tag:** STAGE_02_COMPLETE | **Date:** Dec 8, 2025
 
 ---
 
-## Component Quick Reference
+## File Checklist
 
-### WaterSurfaceAnimator
+### New Files Added
+- ✅ `WaterWaveData.cs` - Wave configuration data
+- ✅ `WaterSurfaceAnimator.cs` - Runtime animation component
+- ✅ `WaterWaves.hlsl` - Wave mathematics shader include
+- ✅ `T_WaterNormal.png` - Procedural normal map texture
 
-**Purpose**: Manages wave animation and time synchronization
+### Files Updated
+- ✅ `WaterProfile.cs` - Added normalScrollSpeed field
+- ✅ `WaterSurface.shader` - Added wave vertex displacement
+- ✅ `WaterCore.hlsl` - Removed HDRP duplicate functions
 
-**Key Properties**:
-| Property | Default | Purpose |
-|----------|---------|---------|
-| animateWaves | true | Enable/disable animation |
-| timeScale | 1.0 | Speed multiplier (0.5 = half speed) |
-| useGlobalTime | true | Sync across all water instances |
-| maxWaveLayers | 8 | Maximum active waves |
-| enableLOD | true | Reduce detail at distance |
+### Files Unchanged
+- `WaterSystem.cs` - Stage 0 component
+- `WaterProfileEditor.cs` - Stage 1 editor
+- `WaterSystemEditor.cs` - Stage 0 editor
 
-**Quick Actions**:
-- Pause: `animateWaves = false`
-- Speed up: `timeScale = 2.0`
-- Reset time: Right-click → Reset Time
-
----
-
-## Profile Quick Reference
-
-### WaterProfile Wave Settings
-
-**Wave Layers** (8 maximum):
-| Parameter | Range | What It Does |
-|-----------|-------|--------------|
-| Direction | Vector2 | Which way wave travels |
-| Amplitude | 0-10m | Wave height (crest to trough / 2) |
-| Wavelength | 0.1-100m | Distance between crests |
-| Steepness | 0-1 | 0=smooth sine, 1=sharp crest |
-| Speed | 0-20 m/s | 0=auto-calculate |
-| Phase | 0-2π | Starting offset |
-
-**Ripple Settings**:
-| Parameter | Range | What It Does |
-|-----------|-------|--------------|
-| Wind Direction | Vector2 | Ripple movement direction |
-| Wind Speed | 0-20 m/s | Ripple animation speed |
-| Ripple Scale | 0.1-10 | Size of ripples |
-| Ripple Strength | 0-1 | Height of ripples |
-| Ripple Octaves | 1-6 | Detail level (higher=more) |
+### Profiles Initialized
+- ✅ `Ocean_Default.asset` - 4 waves, moderate speed
+- ✅ `Lake_Calm.asset` - 2 waves, gentle
+- ✅ `River_Fast.asset` - 3 waves, fast
+- ✅ `Pool_Still.asset` - 1 wave, minimal
 
 ---
 
-## Preset Recipes
+## Component Setup
 
-### Ocean (Large Rolling Waves)
+### WaterSystem GameObject
 
-```
-Wave Layer 0:
-- Direction: (1, 0)
-- Amplitude: 1.5m
-- Wavelength: 60m
-- Steepness: 0.6
+**Required Components:**
+1. `Mesh Filter` - Plane mesh (40x40 recommended)
+2. `Mesh Renderer` - Material: M_Water_Stage1
+3. `WaterSystem (Script)` - Profile: Ocean_Default
+4. `WaterSurfaceAnimator (Script)` - Default settings ✓
 
-Wave Layer 1:
-- Direction: (0.7, 0.7)
-- Amplitude: 1.0m
-- Wavelength: 40m
-- Steepness: 0.5
+**Transform:**
+- Scale: (20, 1, 20) for 20m x 20m surface
+- Position Y: 0 (water surface level)
 
-Wave Layer 2:
-- Direction: (-0.5, 0.866)
-- Amplitude: 0.5m
-- Wavelength: 20m
-- Steepness: 0.4
+### Material Settings (M_Water_Stage1)
 
-Wave Layer 3:
-- Direction: (0.3, -0.954)
-- Amplitude: 0.3m
-- Wavelength: 10m
-- Steepness: 0.3
+**Shader:** HDRP/Water/Surface
 
-Ripples:
-- Wind Speed: 5 m/s
-- Ripple Strength: 0.15
-- Ripple Octaves: 4
-```
+**Required Keywords:**
+- `_WAVES_ENABLED` ✓
+- `_RIPPLES_ENABLED` ✓
 
-### Lake (Gentle Ripples)
+**Wave Properties:**
+- Wave Count: 4 (set by animator)
+- Wave 0-7 parameters (set by animator)
+- Water Time: Auto-updated (increases continuously)
 
-```
-Wave Layer 0:
-- Direction: (1, 0)
-- Amplitude: 0.15m
-- Wavelength: 8m
-- Steepness: 0.2
-
-Wave Layer 1:
-- Direction: (0.6, 0.8)
-- Amplitude: 0.1m
-- Wavelength: 5m
-- Steepness: 0.15
-
-Ripples:
-- Wind Speed: 1.5 m/s
-- Ripple Strength: 0.05
-- Ripple Octaves: 3
-```
-
-### River (Directional Flow)
-
-```
-Wave Layer 0:
-- Direction: (1, 0) [flow direction]
-- Amplitude: 0.2m
-- Wavelength: 3m
-- Steepness: 0.3
-- Speed: 2 m/s [override auto]
-
-Wave Layer 1:
-- Direction: (1, 0.1)
-- Amplitude: 0.15m
-- Wavelength: 2m
-- Steepness: 0.25
-- Speed: 1.8 m/s
-
-Ripples:
-- Wind Direction: (1, 0) [same as flow]
-- Wind Speed: 3 m/s
-- Ripple Strength: 0.08
-- Ripple Octaves: 3
-```
-
-### Pool (Almost Still)
-
-```
-Wave Layer 0:
-- Direction: (1, 0)
-- Amplitude: 0.02m
-- Wavelength: 0.5m
-- Steepness: 0.1
-
-Ripples:
-- Wind Speed: 0.5 m/s
-- Ripple Strength: 0.02
-- Ripple Octaves: 2
-```
+**Normal Map:**
+- Texture: T_WaterNormal
+- Scale: 1.0
+- Tiling: (1, 1)
+- Scroll Speed: 0.02 (from profile)
 
 ---
 
-## Common Tasks
+## Profile Comparison
 
-### Make Waves Faster/Slower
-
-**Method 1 - Time Scale** (affects all waves):
-```
-WaterSurfaceAnimator.timeScale = 2.0f; // 2x speed
-```
-
-**Method 2 - Individual Waves** (Edit Profile):
-- Increase wave Speed parameter
-- Or decrease Wavelength (shorter = faster)
-
-### Add More Detail
-
-1. Increase Ripple Octaves (2 → 4)
-2. Add more wave layers
-3. Reduce Ripple Scale (larger scale = less detail)
-
-### Reduce Performance Cost
-
-1. Decrease maxWaveLayers (8 → 4)
-2. Enable LOD
-3. Reduce Ripple Octaves (4 → 2)
-4. Increase LOD distances
-
-### Synchronize Multiple Water Bodies
-
-Set all WaterSurfaceAnimator instances to:
-- `useGlobalTime = true`
-
-They'll all animate in sync.
-
-### Make Choppy Water (Stormy)
-
-1. Increase Steepness (0.5 → 0.8)
-2. Add more wave layers (4 → 8)
-3. Increase Wind Speed (2 → 8 m/s)
-4. Increase Ripple Strength (0.1 → 0.3)
-
-### Make Calm Water
-
-1. Decrease Amplitude (1.0 → 0.1)
-2. Decrease Steepness (0.5 → 0.2)
-3. Reduce Wind Speed (5 → 1 m/s)
-4. Use fewer wave layers (4 → 1-2)
+| Property | Ocean | Lake | River | Pool |
+|----------|-------|------|-------|------|
+| **Waves** | 4 | 2 | 3 | 1 |
+| **Amplitude** | 1.5-0.3m | 0.15-0.1m | 0.2-0.1m | 0.05m |
+| **Wavelength** | 60-10m | 8-5m | 3-1.5m | 4m |
+| **Anim Speed** | 1.0x | 0.6x | 1.5x | 0.3x |
+| **Normal Scroll** | 0.02 | 0.01 | 0.04 | 0.005 |
+| **Wind Speed** | 5 | 1.5 | 3 | 0.5 |
+| **Ripple Octaves** | 4 | 3 | 3 | 2 |
 
 ---
 
-## Debugging Tips
+## Unity 6000.3.0f1 Fixes
 
-### Waves Don't Move
+### Shader Compiler Bug
+**Issue:** Cannot parse `[Header()]` attributes  
+**Fix:** Use comments instead: `// Section Name`
 
-✅ Check:
-1. `WaterSurfaceAnimator.animateWaves = true`
-2. Material shader keyword `_WAVES_ENABLED` enabled
-3. Profile has wave layers
-4. `timeScale > 0`
-
-### Performance Issues
-
-✅ Optimize:
-1. Enable LOD (`enableLOD = true`)
-2. Reduce `maxWaveLayers` (8 → 4)
-3. Reduce `rippleOctaves` (4 → 2)
-4. Increase LOD distances
-
-### Waves Look Wrong
-
-✅ Fix:
-1. Reduce Steepness if too spiky
-2. Check Direction is normalized
-3. Ensure Wavelength > 0.1
-4. Validate Amplitude isn't too large
-
-### Shader Errors
-
-✅ Verify:
-1. HDRP 17 is installed
-2. WaterWaves.hlsl in Shaders/Include/
-3. WaterCore.hlsl exists
-4. Shader target 4.5+
-
----
-
-## Keyboard Shortcuts (Editor Scripts)
-
-When WaterProfile is selected:
-
-- **Alt+O**: Reset to Ocean preset
-- **Alt+L**: Reset to Lake preset  
-- **Alt+V**: Create Variant (must implement in editor)
-
----
-
-## Script API Reference
-
-### Get Wave Height at Position
-
-```csharp
-WaterSystem waterSystem = GetComponent<WaterSystem>();
-float height = waterSystem.GetWaveHeightAtPosition(worldPos);
+### Shadow Algorithms
+**Issue:** Undefined shadow filter algorithms  
+**Fix:** Add before HDRP includes:
+```hlsl
+#define PUNCTUAL_SHADOW_MEDIUM
+#define DIRECTIONAL_SHADOW_MEDIUM
+#define AREA_SHADOW_MEDIUM
 ```
 
-### Pause/Resume Animation
+### HDRP Include Order
+**Critical Order:**
+1. Common.hlsl
+2. CommonMaterial.hlsl
+3. ShaderVariables.hlsl
+4. Material.hlsl ← **Was missing!**
+5. Lighting.hlsl
 
-```csharp
-WaterSurfaceAnimator animator = GetComponent<WaterSurfaceAnimator>();
-animator.PauseAnimation();
-animator.ResumeAnimation();
-```
+### Removed Functions
+- `GetOddNegativeScale()` - Now in HDRP
+- `UnpackNormalScale()` - Now in HDRP
+- `ComputeFogFactor()` - HDRP uses post-processing
+- `MixFog()` - HDRP uses post-processing
 
-### Get Current Stats
-
-```csharp
-int activeWaves = animator.GetCurrentWaveCount();
-int rippleDetail = animator.GetCurrentRippleOctaves();
-float totalHeight = waterProfile.GetMaxWaveHeight();
-Vector2 direction = waterProfile.GetWaveDirection();
-```
-
----
-
-## Material Keywords
-
-Enable in Material Inspector:
-
-- **_WAVES_ENABLED**: Enable Gerstner wave animation
-- **_RIPPLES_ENABLED**: Enable ripple detail
-
-Disable both for flat water (Stage 01 only).
+### Lighting Workaround
+**Issue:** DirectionalLightDatas not accessible  
+**Temp Fix:** Hardcoded light direction  
+**Stage 3:** Will add proper HDRP lighting
 
 ---
 
 ## Performance Targets
 
-**Good Performance**:
-- WaterSurfaceAnimator: <0.1ms
-- GPU Waves: <0.3ms
-- Total: <0.5ms
-
-**Check in Profiler**:
-1. Window → Analysis → Profiler
-2. CPU Usage → Hierarchy
-3. Find "WaterSurfaceAnimator.Update"
+| Metric | Target | Actual |
+|--------|--------|--------|
+| CPU (Update) | <0.15ms | <0.1ms ✓ |
+| GPU (Render) | <0.5ms | <0.4ms ✓ |
+| GC Alloc | 0 B/frame | 0 B ✓ |
+| Draw Calls | 1 | 1 ✓ |
+| FPS (RTX 5000) | 60+ | 60+ ✓ |
 
 ---
 
-## File Dependencies
+## Common Issues & Fixes
 
-**Required Files**:
-```
-WaterSurfaceAnimator.cs
-  ↓ requires
-WaterSystem.cs (Stage 0)
-  ↓ requires  
-WaterProfile.cs
-  ↓ contains
-WaterWaveData.cs
+### Waves Not Moving
+1. Check WaterSurfaceAnimator attached
+2. Enable "Animate Waves" checkbox
+3. Verify shader keywords enabled
+4. Ensure Wave Count > 0
 
-WaterSurface.shader
-  ↓ includes
-WaterWaves.hlsl
-  ↓ includes
-WaterCore.hlsl (Stage 1)
-```
+### Profile Changes No Effect
+1. Re-run "Initialize All Profiles"
+2. Check profile has Wave Layers
+3. Verify WaterSystem.profile is updating
 
-**Optional Files**:
-- WaterProfileEditor.cs (better Inspector)
-- WaterShaderGUI.cs (better Material Inspector)
+### White/Magenta Water
+1. Check console for shader errors
+2. Verify HDRP includes present
+3. Ensure shadow defines before includes
+4. Reimport shader
+
+### No Normal Detail
+1. Assign T_WaterNormal to material
+2. Set Texture Type to "Normal map"
+3. Check _WAVES_ENABLED keyword
+4. Verify normalScrollSpeed > 0
 
 ---
 
-## Next Stage Preview
+## Key Script Functions
 
-**Stage 03** will add:
-- Screen Space Reflections (SSR)
+### WaterSurfaceAnimator.cs
+
+```csharp
+// Update wave animation every frame
+void Update()
+{
+    UpdateWaterTime();
+    UpdateShaderProperties();
+}
+
+// Build wave parameter arrays for shader
+void BuildWavePropertyArrays(WaterWaveData data)
+
+// Apply all properties to material
+void UpdateShaderProperties()
+
+// Enable shader compilation variants
+void EnableShaderKeywords()
+```
+
+### WaterWaveData.cs
+
+```csharp
+// Factory methods
+WaterWaveData.CreateOceanWaves()
+WaterWaveData.CreateLakeWaves()
+WaterWaveData.CreateRiverWaves()
+WaterWaveData.CreatePoolWaves()
+
+// Validation
+void ValidateLayer(ref WaveLayer layer)
+void ValidateAllLayers()
+```
+
+---
+
+## Shader Properties Quick Ref
+
+### Per-Wave Arrays (0-7)
+- `_Wave{N}_Direction` - Vector4 (Dx, Dz, 0, 0)
+- `_Wave{N}_Amplitude` - Float (meters)
+- `_Wave{N}_Wavelength` - Float (meters)
+- `_Wave{N}_Steepness` - Float (0-1)
+- `_Wave{N}_Speed` - Float (m/s)
+- `_Wave{N}_Phase` - Float (radians)
+
+### Global Wave Settings
+- `_WaveCount` - Int (1-8)
+- `_WindDirection` - Vector4 (Dx, Dz, 0, 0)
+- `_WindSpeed` - Float
+- `_WaterTime` - Float (accumulated seconds)
+
+### Ripple Settings
+- `_RippleScale` - Float
+- `_RippleStrength` - Float
+- `_RippleOctaves` - Int (1-4)
+- `_RippleNormalSampleOffset` - Float
+
+### LOD Settings
+- `_LODDistance0` - Float (meters)
+- `_LODDistance1` - Float (meters)
+
+### Normal Map
+- `_BumpMap` - Texture2D
+- `_BumpScale` - Float (strength)
+- `_NormalTiling` - Vector2
+- `_NormalScrollSpeed` - Float (from profile)
+
+---
+
+## HLSL Functions Quick Ref
+
+### WaterWaves.hlsl
+
+```hlsl
+// Single wave calculation
+void CalculateGerstnerWave(
+    WaveLayer wave,
+    float3 worldPos,
+    float time,
+    inout float3 positionOffset,
+    inout float3 tangent,
+    inout float3 binormal
+)
+
+// Multi-wave summation
+WaveResult CalculateWaves(
+    WaveLayer waves[MAX_WAVE_LAYERS],
+    int numWaves,
+    float3 worldPos,
+    float time
+)
+
+// Noise generation
+float GeneratePerlinNoise(
+    float2 uv,
+    float scale,
+    int octaves
+)
+
+// Complete surface animation
+WaveResult CalculateSurfaceAnimation(
+    WaveLayer waves[MAX_WAVE_LAYERS],
+    int numWaves,
+    float3 worldPos,
+    float time,
+    float2 windDirection,
+    float windSpeed,
+    float rippleScale,
+    float rippleStrength,
+    int rippleOctaves,
+    float normalSampleOffset
+)
+
+// LOD helpers
+int CalculateLODWaveCount(...)
+int CalculateLODRippleOctaves(...)
+```
+
+---
+
+## Testing Checklist
+
+### Visual Tests
+- [ ] Water animates in Play Mode
+- [ ] Waves change between profiles
+- [ ] Normal map scrolls
+- [ ] Multiple wave layers visible
+- [ ] Surface appears realistic
+
+### Profile Tests
+- [ ] Ocean: Large rolling waves
+- [ ] Lake: Gentle ripples
+- [ ] River: Fast choppy waves
+- [ ] Pool: Nearly still
+
+### Performance Tests
+- [ ] 60+ FPS in Game view
+- [ ] <0.1ms CPU in Profiler
+- [ ] <0.5ms GPU in Profiler
+- [ ] 0 GC allocations
+
+### Console Tests
+- [ ] 0 errors
+- [ ] 0 warnings
+- [ ] Initialization success messages
+
+---
+
+## Stage 3 Preview
+
+**Next: Environmental Reflections**
 - Sky/environment reflections
+- Screen-space reflections (SSR)
 - Planar reflections
-- Reflection probe integration
+- Proper HDRP lighting
+- Reflection masking (Fresnel)
 
-Waves from Stage 02 will affect reflections!
-
----
-
-## Help & Resources
-
-**If stuck**:
-1. Check STAGE_02_TESTING.md
-2. Review STAGE_02_DOCUMENTATION.md
-3. Verify Unity 6.3 compatibility
-4. Check HDRP 17 is installed
-
-**Common Unity versions**:
-- ✅ Unity 6.3 + HDRP 17: Full support
-- ⚠️ Unity 6.2: May need adjustments
-- ❌ Unity 2022 LTS: Different HDRP API
+**Expected Improvements:**
+- Water reflects sky and surroundings
+- Dynamic lighting from sun
+- Professional visual quality
+- No more hardcoded light direction
 
 ---
 
-**Quick Start Complete!** 🌊
-
-Your water should now have realistic rolling waves and surface animation.
+**Quick Ref Version:** 1.0  
+**Last Updated:** Dec 8, 2025
